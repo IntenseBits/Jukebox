@@ -136,7 +136,13 @@ open class JukeboxItem: NSObject {
     }
     
     open override var description: String {
-        return "<JukeboxItem:\ntitle: \(meta.title)\nalbum: \(meta.album)\nartist:\(meta.artist)\nduration : \(meta.duration),\ncurrentTime : \(currentTime)\nURL: \(URL)>"
+        let title = meta.title ?? "NO TITLE"
+        let album = meta.album ?? "NO ALBUM"
+        let artist = meta.artist ?? "NO ARTIST"
+        let duration = meta.duration ?? 0.0
+        let currentTime = self.currentTime ?? 0.0
+
+        return "<JukeboxItem:\ntitle: \(title)\nalbum: \(album)\nartist:\(artist)\nduration : \(duration),\ncurrentTime : \(currentTime)\nURL: \(URL)>"
     }
     
     // MARK:- Private methods -
@@ -161,7 +167,7 @@ open class JukeboxItem: NSObject {
         timer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(JukeboxItem.notifyDelegate), userInfo: nil, repeats: false)
     }
     
-    func notifyDelegate() {
+    @objc func notifyDelegate() {
         timer?.invalidate()
         timer = nil
         self.delegate?.jukeboxItemDidUpdate(self)
@@ -176,16 +182,16 @@ open class JukeboxItem: NSObject {
             }
         })
     }
-    
+
     fileprivate func configureMetadata()
     {
-        
+
        DispatchQueue.global(qos: .background).async {
             let metadataArray = AVPlayerItem(url: self.URL).asset.commonMetadata
             
             for item in metadataArray
             {
-                item.loadValuesAsynchronously(forKeys: [AVMetadataKeySpaceCommon], completionHandler: { () -> Void in
+                item.loadValuesAsynchronously(forKeys: [AVMetadataKeySpace.common.rawValue], completionHandler: { () -> Void in
                     self.meta.process(metaItem: item)
                     DispatchQueue.main.async {
                         self.scheduleNotification()
@@ -201,13 +207,13 @@ private extension JukeboxItem.Meta {
         
         switch item.commonKey
         {
-        case "title"? :
+        case .commonKeyTitle? :
             title = item.value as? String
-        case "albumName"? :
+        case .commonKeyAlbumName? :
             album = item.value as? String
-        case "artist"? :
+        case .commonKeyArtist? :
             artist = item.value as? String
-        case "artwork"? :
+        case .commonKeyArtwork? :
             processArtwork(fromMetadataItem : item)
         default :
             break
